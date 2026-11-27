@@ -1,0 +1,8 @@
+# Add to supabase/config.toml (local development and `supabase config push`):
+[auth.captcha]
+enabled = true
+provider = "turnstile"
+secret = "env(TURNSTILE_SECRET)"
+# For hosted projects use the dashboard instead: Authentication -> Attack Protection -> Enable CAPTCHA protection.
+# Cloudflare test keys for development: site key 1x00000000000000000000AA (always passes),
+# secret 1x0000000000000000000000000000000AA.
