@@ -1,0 +1,11 @@
+name = "goldentongue-members"
+pages_build_output_dir = "public"
+compatibility_date = "2025-01-01"
+
+[vars]
+AI_FREE_DAILY_LIMIT = "20"
+# Fair-use cap per paying member and day for AI requests (admins are unlimited).
+AI_MEMBER_DAILY_LIMIT = "300"
+# "true": only paying members and admins get in. "false": every confirmed member gets in.
+REQUIRE_PREMIUM = "true"
+# Set as secrets (scripts/deploy.sh does this): SUPABASE_URL, SUPABASE_ANON_KEY, OPENAI_API_KEY, TURNSTILE_SITE_KEY (optional)

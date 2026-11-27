@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>GoldenTongue – Members</title>
+<meta name="theme-color" content="#000000">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="favicon.png">
+<link rel="apple-touch-icon" href="icons/Icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Manrope:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--gold:#D4AF37;--gold2:#FFD700;--mu:#B8B8B8;--g:linear-gradient(135deg,#C9A227,#FFD700 50%,#C9A227);color-scheme:dark;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);box-sizing:border-box}
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:radial-gradient(circle at 15% 10%,rgba(212,175,55,.22),transparent 40%),radial-gradient(circle at 90% 80%,rgba(201,162,39,.16),transparent 45%),#000;color:#fff;font-family:Manrope,system-ui,sans-serif;font-size:16px}
+main{max-width:420px;margin:0 auto;padding:48px 20px}
+h1{font-family:"Cormorant Garamond",Georgia,serif;font-size:40px;line-height:1.05;margin:0 0 8px;color:var(--gold)}
+.mu{color:var(--mu)}
+form{background:rgba(255,255,255,.05);border:1px solid rgba(212,175,55,.28);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-radius:22px;padding:22px;margin-top:24px}
+label{display:block;font-size:13px;color:var(--mu);margin:14px 0 6px}
+input[type=email],input[type=password]{width:100%;background:rgba(0,0,0,.45);color:#fff;border:1px solid rgba(212,175,55,.3);border-radius:14px;padding:13px;font:inherit}
+input:focus-visible,button:focus-visible{outline:2px solid var(--gold2);outline-offset:2px}
+.check{display:flex;gap:10px;align-items:center;margin-top:14px;color:#fff;font-size:14px}
+button{font:inherit;cursor:pointer;border-radius:14px;min-height:46px;padding:12px 18px}
+.go{width:100%;margin-top:18px;background:var(--g);color:#000;font-weight:700;border:0;box-shadow:0 0 24px rgba(212,175,55,.25)}
+.go:disabled{opacity:.55;cursor:wait}
+.link{background:none;border:0;color:var(--gold);width:100%;margin-top:6px}
+#err{color:#ff7b7b;min-height:20px;margin:12px 0 0;font-size:14px}
+#ok{color:#00C853;margin:12px 0 0;font-size:14px}
+#ts{margin-top:14px;min-height:0}
+#legal{margin-top:18px;text-align:center;font-size:12px}#legal a{color:#B8B8B8;margin:0 8px}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main>
+  <h1>GoldenTongue</h1>
+  <p class="mu" id="sub">Members only. Log in to continue.</p>
+  <form id="f" novalidate>
+    <label for="email">Email</label>
+    <input id="email" type="email" autocomplete="email" inputmode="email" required>
+    <label for="pw">Password</label>
+    <input id="pw" type="password" autocomplete="current-password" required>
+    <label class="check" id="adultRow" hidden><input id="adult" type="checkbox"> I am 18 or older</label>
+    <div id="ts"></div>
+    <p id="err" role="alert"></p>
+    <p id="ok" hidden></p>
+    <button class="go" id="go" type="submit">Log in</button>
+    <button class="link" id="sw" type="button">Create an account</button>
+  </form>
+  <p id="legal"></p>
+</main>
+<script>
+(function(){
+  var mode="login",token=null,widget=null,needCaptcha=false;
+  var $=function(i){return document.getElementById(i)};
+
+  fetch("/api/config").then(function(r){return r.json()}).then(function(c){var h="";if(c.privacyUrl)h+='<a href="'+encodeURI(c.privacyUrl)+'" target="_blank" rel="noopener">Privacy policy</a>';if(c.termsUrl)h+='<a href="'+encodeURI(c.termsUrl)+'" target="_blank" rel="noopener">Terms of use</a>';if(h){$("legal").innerHTML=h}}).catch(function(){});
+  var q=new URLSearchParams(location.search).get("next")||"/";
+  var next=(q.charAt(0)==="/"&&q.charAt(1)!=="/"&&q.indexOf("\\")<0&&q.indexOf("/api/")!==0)?q:"/";
+  function setMode(m){mode=m;var s=m==="signup";$("sub").textContent=s?"Create your member account.":"Members only. Log in to continue.";$("go").textContent=s?"Create account":"Log in";$("sw").textContent=s?"I already have an account":"Create an account";$("adultRow").hidden=!s;$("pw").autocomplete=s?"new-password":"current-password";$("err").textContent="";$("ok").hidden=true}
+  $("sw").onclick=function(){setMode(mode==="login"?"signup":"login")};
+  function resetCaptcha(){token=null;try{if(widget!==null&&window.turnstile)turnstile.reset(widget)}catch(e){}}
+  fetch("/api/config").then(function(r){return r.json()}).then(function(c){
+    if(!c.turnstileSiteKey)return;needCaptcha=true;
+    var s=document.createElement("script");s.src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";s.async=true;
+    s.onload=function(){widget=turnstile.render("#ts",{sitekey:c.turnstileSiteKey,theme:"dark",callback:function(t){token=t},"expired-callback":function(){token=null},"error-callback":function(){token=null}})};
+    document.head.appendChild(s);
+  }).catch(function(){});
+  $("f").onsubmit=function(e){
+    e.preventDefault();$("err").textContent="";$("ok").hidden=true;
+    var email=$("email").value.trim(),pw=$("pw").value;
+    if(!email||!pw){$("err").textContent="Enter your email and password.";return}
+    if(mode==="signup"&&!$("adult").checked){$("err").textContent="Please confirm that you are 18 or older.";return}
+    if(needCaptcha&&!token){$("err").textContent="Please complete the security check.";return}
+    $("go").disabled=true;
+    fetch("/api/"+mode,{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:email,password:pw,adult:$("adult").checked,captcha:token})})
+    .then(function(r){return r.json().catch(function(){return{}}).then(function(d){return{ok:r.ok,d:d}})})
+    .then(function(x){
+      if(!x.ok){$("err").textContent=x.d.error||"Something went wrong. Please try again.";resetCaptcha();return}
+      if(mode==="signup"&&x.d.confirm){$("ok").textContent="Check your email to confirm your account, then log in.";$("ok").hidden=false;setMode("login");$("ok").hidden=false;resetCaptcha();return}
+      location.replace(next);
+    })
+    .catch(function(){$("err").textContent="No connection. Please try again.";resetCaptcha()})
+    .then(function(){$("go").disabled=false});
+  };
+})();
+</script>
+</body>
+</html>

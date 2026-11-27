@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>GoldenTongue – Membership</title>
+<meta name="theme-color" content="#000000">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="favicon.png">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Manrope:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--gold:#D4AF37;--gold2:#FFD700;--mu:#B8B8B8;--g:linear-gradient(135deg,#C9A227,#FFD700 50%,#C9A227);color-scheme:dark;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);box-sizing:border-box}
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:radial-gradient(circle at 15% 10%,rgba(212,175,55,.22),transparent 40%),radial-gradient(circle at 90% 80%,rgba(201,162,39,.16),transparent 45%),#000;color:#fff;font-family:Manrope,system-ui,sans-serif;font-size:16px}
+main{max-width:460px;margin:0 auto;padding:40px 20px}
+h1{font-family:"Cormorant Garamond",Georgia,serif;font-size:38px;line-height:1.05;margin:0 0 8px;color:var(--gold)}
+.mu{color:var(--mu)}
+.card{background:rgba(255,255,255,.05);border:1px solid rgba(212,175,55,.28);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-radius:22px;padding:18px;margin:14px 0}
+.plan{width:100%;display:flex;justify-content:space-between;align-items:center;text-align:left;color:#fff;background:rgba(255,255,255,.05);border:1px solid rgba(212,175,55,.3);border-radius:18px;padding:16px;margin:10px 0;font:inherit;cursor:pointer}
+.plan:hover,.plan:focus-visible{border-color:var(--gold2);outline:none}
+.plan b{display:block}.plan small{color:var(--mu)}
+.price{font-family:"Cormorant Garamond",serif;font-size:26px;color:var(--gold)}
+ul{margin:8px 0;padding-left:20px;color:#ddd}
+button.link{background:none;border:0;color:var(--gold);font:inherit;cursor:pointer;padding:10px 0}
+#msg{min-height:22px;color:#ffb74d}
+#legal{margin-top:18px;text-align:center;font-size:12px}#legal a{color:#B8B8B8;margin:0 8px}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main>
+  <h1>Membership required</h1>
+  <p class="mu" id="who">Checking your account…</p>
+  <div id="wait" class="card" hidden>Activating your membership… this usually takes a few seconds.</div>
+  <div id="plans" hidden>
+    <div class="card">
+      <b>Included</b>
+      <ul><li>Unlimited AI coaching</li><li>Voice analyzer, simulator and Charm Blueprint</li><li>Deep Talk and Business practice with scoring</li><li>All lines, openers and flirt techniques</li></ul>
+    </div>
+    <button class="plan" data-plan="monthly"><span><b>Monthly</b><small>cancel any time</small></span><span class="price">14.99 USD</span></button>
+    <button class="plan" data-plan="quarterly"><span><b>Quarterly</b><small>save 22 percent</small></span><span class="price">34.99 USD</span></button>
+    <button class="plan" data-plan="yearly"><span><b>Yearly</b><small>save 44 percent</small></span><span class="price">99.99 USD</span></button>
+    <p id="msg" role="alert"></p>
+  </div>
+  <p><button class="link" id="out" hidden>Log out</button> <button class="link" id="del" hidden style="color:#ff7b7b">Delete account</button></p>
+  <p id="legal"></p>
+</main>
+<script>
+(function(){
+  var $=function(i){return document.getElementById(i)};
+  var checkout=new URLSearchParams(location.search).get("checkout");
+  function me(){return fetch("/api/me",{credentials:"same-origin"}).then(function(r){return r.status===401?null:r.json()})}
+  function poll(n){me().then(function(m){
+    if(m&&(m.premium||m.admin)){location.replace("/");return}
+    if(n>0){setTimeout(function(){poll(n-1)},2500);return}
+    $("wait").textContent="Your payment is still being confirmed. Reload this page in a minute.";
+  })}
+  me().then(function(m){
+    if(!m){$("who").innerHTML='Please <a href="/login?next=%2Fupgrade" style="color:#D4AF37">log in</a> first.';return}
+    if(m.premium||m.admin){location.replace("/");return}
+    $("who").textContent=m.email+" does not have an active membership yet.";
+    $("out").hidden=false;$("del").hidden=false;
+    if(checkout==="success"){$("wait").hidden=false;poll(24);return}
+    $("plans").hidden=false;
+    if(checkout==="cancel")$("msg").textContent="Checkout was cancelled. You have not been charged.";
+  });
+  document.querySelectorAll(".plan").forEach(function(b){b.onclick=function(){
+    $("msg").textContent="Opening secure checkout…";
+    fetch("/api/checkout",{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json"},body:JSON.stringify({plan:b.dataset.plan})})
+    .then(function(r){return r.json().then(function(d){return{ok:r.ok,d:d}})})
+    .then(function(x){if(x.ok&&x.d.url){location.href=x.d.url}else{$("msg").textContent=x.d.error||"Checkout is unavailable right now."}})
+    .catch(function(){$("msg").textContent="No connection. Please try again."})}});
+  $("del").onclick=function(){var t=window.prompt("This permanently deletes your account and all your data. Type DELETE to confirm.");if(t!=="DELETE")return;fetch("/api/delete-account",{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json"},body:JSON.stringify({confirm:"DELETE"})}).then(function(r){if(r.ok){location.href="/login"}else{alert("The account could not be deleted. Please contact support.")}})};
+  fetch("/api/config").then(function(r){return r.json()}).then(function(c){var h="";if(c.privacyUrl)h+='<a href="'+encodeURI(c.privacyUrl)+'" target="_blank" rel="noopener">Privacy policy</a>';if(c.termsUrl)h+='<a href="'+encodeURI(c.termsUrl)+'" target="_blank" rel="noopener">Terms of use</a>';if(h){$("legal").innerHTML=h}}).catch(function(){});
+  $("out").onclick=function(){fetch("/api/logout",{method:"POST",credentials:"same-origin"}).then(function(){location.href="/login"})};
+})();
+</script>
+</body>
+</html>

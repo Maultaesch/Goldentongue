@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Delete your GoldenTongue account</title>
+<meta name="theme-color" content="#000000">
+<link rel="icon" href="favicon.png">
+<style>
+body{margin:0;background:#000;color:#fff;font-family:system-ui,-apple-system,Segoe UI,sans-serif;line-height:1.6}
+main{max-width:640px;margin:0 auto;padding:40px 20px}
+h1{color:#D4AF37;font-size:30px}h2{color:#D4AF37;font-size:18px;margin-top:28px}
+a{color:#D4AF37}li{margin:6px 0}.mu{color:#B8B8B8}
+</style>
+</head>
+<body>
+<main>
+  <h1>Delete your account</h1>
+  <p class="mu">You can delete your GoldenTongue account and all your data at any time.</p>
+
+  <h2>In the app</h2>
+  <ol><li>Open the app and go to <b>Profile</b>.</li><li>Tap <b>Delete account</b>.</li><li>Type DELETE to confirm.</li></ol>
+
+  <h2>On the website</h2>
+  <ol><li><a href="/login">Log in</a> and open <b>Profile</b>, or open the membership page if you have no membership.</li><li>Choose <b>Delete account</b> and type DELETE to confirm.</li></ol>
+
+  <h2>What is deleted</h2>
+  <p>Your account, profile, scores, practice results, saved lines, voice analysis results, conversation practice history and plans are deleted permanently and immediately. Voice recordings are not stored: they are deleted right after the analysis.</p>
+
+  <h2>Your subscription</h2>
+  <p>Deleting the account does <b>not</b> cancel a subscription. Cancel it yourself so you are not charged again: in the App Store (Settings, your name, Subscriptions), in Google Play (Payments and subscriptions, Subscriptions), or for website payments in your Stripe receipt email.</p>
+
+  <h2>Cannot log in?</h2>
+  <p id="support">Contact support from the email address of your account and ask for deletion.</p>
+</main>
+<script>
+fetch("/api/config").then(function(r){return r.json()}).then(function(c){
+  if(c.supportEmail){var a=document.createElement("a");a.href="mailto:"+encodeURIComponent(c.supportEmail).replace("%40","@");a.textContent=c.supportEmail;
+    var p=document.getElementById("support");p.textContent="Email ";p.appendChild(a);p.appendChild(document.createTextNode(" from the address of your account and ask for deletion."))}
+}).catch(function(){});
+</script>
+</body>
+</html>

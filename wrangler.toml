@@ -1,0 +1,33 @@
+name = "goldentongue-api"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+
+# Without a route the worker is served on <name>.<account>.workers.dev.
+# For production uncomment and set your domain (the zone must be on Cloudflare):
+# routes = [{ pattern = "api.example.com", custom_domain = true }]
+
+[vars]
+UPSTREAM = "https://YOUR-PROJECT.supabase.co"
+ALLOWED_ORIGINS = "https://app.example.com"
+# Edge functions clients may call. Webhooks (stripe-webhook, revenuecat-webhook) are intentionally absent.
+ALLOWED_FUNCTIONS = "coach,voice-analyze,simulator,blueprint,exercise-evaluate,create-checkout,delete-account"
+
+# Rate limiting (per IP, per 60 s). Binding syntax depends on your wrangler version:
+# if "unsafe.bindings" is rejected, use the "ratelimits" form from the Cloudflare docs instead.
+[[unsafe.bindings]]
+name = "RATE_LIMIT_AI"
+type = "ratelimit"
+namespace_id = "1001"
+simple = { limit = 20, period = 60 }
+
+[[unsafe.bindings]]
+name = "RATE_LIMIT_AUTH"
+type = "ratelimit"
+namespace_id = "1002"
+simple = { limit = 10, period = 60 }
+
+[[unsafe.bindings]]
+name = "RATE_LIMIT_API"
+type = "ratelimit"
+namespace_id = "1003"
+simple = { limit = 300, period = 60 }
